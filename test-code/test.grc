@@ -1,0 +1,72 @@
+fun main(): nothing
+
+  fun something(a: int): int;
+  $var something: int;
+
+  fun anything(): int { return something(1); }
+
+  fun brackets(ref first: char[]; ref second, third: int[][16]): int
+    var idx: int;
+    var b: char;
+    $var brackets: int;
+    $fun brackets(): int;
+    $fun something(ref b: int): int;
+    fun something(ref b: char): int {}
+  {
+    $b <- first[5];
+    idx <- 0;
+    while idx < 10 do {
+      if idx mod 02 = 0 then second[idx div 2][0] <- second[idx][0];
+      idx <- idx + 1;
+    }
+    return brackets(first, second, third);
+  }
+  
+  fun something(a: int): int { return anything(); }
+
+  var a, b, c: int;
+  var arr: int[16][16];
+  var arr2: int[16];
+  var str: char[16][16][16];
+  var str2: char[16];
+
+{
+  ;
+
+  a <- 1;
+  c <- 2;
+  str[0][1] <- "Hello, World!\n";
+  str2[15] <- '\0';
+  str[0][2] <- str2;
+  arr2[something(a)] <- 10;
+
+  $arr[0] <- arr2;
+
+  b <- brackets("hello", arr, arr);
+  $brackets <- 3;
+
+  {
+    something(a);
+  }
+
+
+  if a=b then readInteger(); else writeInteger(10);
+
+  writeInteger(a);
+
+  if 
+        not 
+          -a = c 
+    or 
+          a # c 
+      and 
+          (a < c or a > c) 
+      and 
+          a <= c 
+    or 
+        not 
+          a >= c 
+
+  then return;
+  else while a = 0 do a <- -readInteger();
+}

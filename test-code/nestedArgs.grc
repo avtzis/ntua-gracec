@@ -1,0 +1,43 @@
+fun main(): nothing 
+
+  fun d(i, j, k: int): nothing 
+    fun e(j: int): nothing
+    {
+      i <- 1;
+      j <- 2;
+      k <- 3;
+    }
+  {
+    e(7);
+    writeInteger(i);
+    writeInteger(j);
+    writeInteger(k);
+  }
+  
+  fun f(i: int): int
+    fun g(j: int): nothing 
+      fun h(k: int): nothing 
+      {
+        f(j);
+        g(k);
+        h(i);
+        d(i, j, k);
+      }
+    {
+      i <- i + 1;
+    }
+  {
+    g(1);
+    return i;
+  }
+
+{
+  writeInteger(f(10));
+  d(1, 1, 1);
+}
+
+$ Output:
+$ 11
+$ 1
+$ 1
+$ 3

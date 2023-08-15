@@ -1,0 +1,27 @@
+fun main(): nothing
+
+  var a: int;
+
+  fun f(b: int; ref c: int): int
+    var d: int;
+  {
+    if a = 0 then return 0;
+    d <- 0;
+    while d < 10 do {
+      a <- a + d;
+      b <- a + b;
+      c <- b * d;
+      d <- d + 1;
+    }
+    return b;
+  }
+
+  var b, c, d: int;
+
+{
+  a <- 1;
+  c <- 2;
+  d <- f(c, b);
+
+  if d < b then writeInteger(c); else writeInteger(d);
+}

@@ -1,0 +1,11 @@
+fun main(): nothing
+
+  fun f(ref s: char[]): nothing
+  {
+    s[2] <- 'y';
+    writeString(s);
+  }
+
+{
+  f("helo\n");
+}
