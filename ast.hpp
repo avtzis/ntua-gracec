@@ -65,7 +65,7 @@ public:
     // Initialize
     TheModule = std::make_unique<llvm::Module>("grace program", TheContext);
     TheFPM = std::make_unique<llvm::legacy::FunctionPassManager>(TheModule.get());
-    if (optimize) {
+    if(optimize) {
       TheFPM->add(llvm::createPromoteMemoryToRegisterPass());
       TheFPM->add(llvm::createInstructionCombiningPass());
       TheFPM->add(llvm::createReassociatePass());
@@ -78,13 +78,6 @@ public:
     i8 = llvm::IntegerType::get(TheContext, 8);
     i32 = llvm::IntegerType::get(TheContext, 32);
     i64 = llvm::IntegerType::get(TheContext, 64);
-
-    // Initialize global variables
-    /* llvm::ArrayType *nl_type = llvm::ArrayType::get(i8, 2);
-    TheNL = new llvm::GlobalVariable(
-      *TheModule, nl_type, true, llvm::GlobalValue::PrivateLinkage,
-      llvm::ConstantArray::get(nl_type, {c8('\n'), c8('\0')}), "nl");
-    TheNL->setAlignment(llvm::MaybeAlign(1)); */
 
     // Initialize library functions
     llvm::FunctionType *writeInteger_type =llvm::FunctionType::get(llvm::Type::getVoidTy(TheContext), {i64}, false);
@@ -226,7 +219,7 @@ protected:
       case 0: return ref ? llvm::PointerType::get(i32, 0) : i32;
       case 1: return ref ? llvm::PointerType::get(i8, 0) : i8;
       case 2: if(ref) return llvm::PointerType::get(i32, 0); else return llvm::ArrayType::get(i32, size);  /////!array
-      case 3: if(ref) return llvm::PointerType::get(i8, 0); else return llvm::ArrayType::get(i8, size);  /////!array
+      case 3: if(ref) return llvm::PointerType::get(i8, 0); else return llvm::ArrayType::get(i8, size+1);  /////!array
       case 5: return llvm::Type::getVoidTy(TheContext);
       default: return nullptr;
     }
@@ -286,6 +279,7 @@ public:
   }
   llvm::Value* codegen(bool AInst=false) const override {
     for(Stmt *s: *stmt_list) {
+      if(s == nullptr) continue;
       s->codegen();
     }
     return nullptr;
@@ -335,6 +329,7 @@ public:
     //* lookup previously declared function and check if params are the same
     auto *entry = st.lookup_last_scope(id);    //! lookup should be in the last scope
     if(!entry->defined) {
+      declaration = true;
       auto st_params = st.get_params(id);
       auto st_params_length = st_params.size();
       auto params_length = param_list ? param_list->size() : 0;
@@ -458,10 +453,15 @@ public:
     return result;
   }
 
+  bool isDecl() {
+    return declaration;
+  }
+
 protected:
   std::string id;
   std::vector<Decl *> *param_list;
   Type ret;
+  bool declaration = false;
 };
 
 class Function: public Decl {
@@ -506,10 +506,7 @@ public:
       return ret;
     }
 
-    llvm::Function *TheFunction = NamedFunctions[header->getId()].first;
-    if(!TheFunction) {
-      TheFunction = header->codegen();
-    }
+    llvm::Function *TheFunction = header->isDecl() ? NamedFunctions[header->getId()].first : header->codegen();
 
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "entry", TheFunction);
     Builder.SetInsertPoint(BB);
@@ -806,13 +803,17 @@ public:
     }
   }
   llvm::Value* codegen(bool AInst=false) const override {
-    // llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
-
     if(expr != nullptr) {
       llvm::Value *v = expr->codegen();
       Builder.CreateRet(v);
     } else {
-      Builder.CreateRetVoid();
+      llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
+      auto Type = TheFunction->getReturnType();
+      if(Type == i32) {
+        Builder.CreateRet(c32(0));
+      } else {
+        Builder.CreateRetVoid();
+      }
     }
 
     // llvm::BasicBlock *BB = llvm::BasicBlock::Create(TheContext, "case", TheFunction);

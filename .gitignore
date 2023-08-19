@@ -20,3 +20,9 @@ lib.a
 minibasic.a
 parser.cpp
 parser.o*
+temp*
+*.imm
+*.asm
+*/a.out
+grc/
+a.out
