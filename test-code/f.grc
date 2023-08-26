@@ -6,6 +6,9 @@ fun main(): nothing
     writeString(s);
   }
 
+  var str: char[16];
+
 {
-  f("helo\n");
+  strcpy(str, "helo\n");
+  f(str);
 }

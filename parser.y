@@ -410,19 +410,19 @@ int main(int argc, char** argv) {
 
         std::ifstream file(filename, std::ios::in);
         if(!file.is_open()) {
-        std::cerr << "gracec: could not open file " << filename << std::endl;
-        exit(1);
+            std::cerr << "gracec: could not open file " << filename << std::endl;
+            exit(1);
         }
 
         int fd = open(filename.c_str(), O_RDONLY);
         if(fd == -1) {
-        std::cerr << "gracec: could not open file " << filename << std::endl;
-        exit(1);
+            std::cerr << "gracec: could not open file " << filename << std::endl;
+            exit(1);
         }
 
         if(dup2(fd, 0) == -1) {
-        std::cerr << "gracec: dup2 failed" << std::endl;
-        exit(1);
+            std::cerr << "gracec: dup2 failed" << std::endl;
+            exit(1);
         }
         close(fd);
 
@@ -436,10 +436,16 @@ int main(int argc, char** argv) {
             _imm.flush();
         } else {
             std::cerr << "gracec: error creating file" << std::endl;
+            exit(1);
         }
 
         char command[256];
         sprintf(command, "llc -o %s.asm %s.imm", title.c_str(), title.c_str());
-        system(command);
+        if(system(command)) {
+            std::cerr << "gracec: error compiling imm code" << std::endl;
+            exit(1);
+        }
     }
+    
+    return 0;
 }

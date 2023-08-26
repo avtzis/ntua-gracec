@@ -120,7 +120,7 @@ public:
     auto main = (llvm::Function*)codegen();
 
     // Verify the IR.
-    bool bad = llvm::verifyModule(*TheModule, &llvm::errs());
+    // bool bad = llvm::verifyModule(*TheModule, &llvm::errs());
     if (false) {
       std::cerr << "The IR is bad!" << std::endl;
       TheModule->print(llvm::errs(), nullptr);
@@ -685,7 +685,7 @@ public:
   }
   void analyze() override {
     l_val->analyze();
-    if(l_val->getType() == ARRAY_t) {
+    if(l_val->getType() == ARRAY_t || l_val->getType() == STRING_t && l_val->getDim() > 1) {
       yyerror("Cannot assign to array");
     }
 

@@ -1,40 +1,46 @@
 fun main(): nothing 
 
   fun d(i, j, k: int): nothing 
+
     fun e(j: int): nothing
-    {
+    { $ e
       i <- 1;
       j <- 2;
       k <- 3;
-    }
-  {
+    } $ 3
+
+  { $ d
     e(7);
-    writeInteger(i);
-    writeInteger(j);
-    writeInteger(k);
-  }
+    writeInteger(i); writeChar('\n');
+    writeInteger(j); writeChar('\n');
+    writeInteger(k); writeChar('\n');
+  } $ d
   
   fun f(i: int): int
+
     fun g(j: int): nothing 
+
       fun h(k: int): nothing 
-      {
+      { $ k
         f(j);
         g(k);
         h(i);
         d(i, j, k);
-      }
-    {
+      } $ k
+
+    { $ g
       i <- i + 1;
-    }
-  {
+    } $ g
+    
+  { $ f
     g(1);
     return i;
-  }
+  } $ f
 
-{
-  writeInteger(f(10));
+{ $ main
+  writeInteger(f(10)); writeChar('\n');
   d(1, 1, 1);
-}
+} $ main
 
 $ Output:
 $ 11

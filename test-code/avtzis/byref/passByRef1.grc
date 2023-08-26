@@ -11,7 +11,7 @@ fun main(): nothing
       b <- b + a;
       d <- d + 1;
     }
-    c <- 1 - b * d;
+    c <- b * (d - 1);
     return b;
   } $ f
 

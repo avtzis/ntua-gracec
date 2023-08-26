@@ -1,0 +1,53 @@
+fun main(): nothing
+
+  fun matrix_mult(ref a, b, c: int[3][3]): nothing
+    var i, j, k: int;
+  {
+    while i < 3 do {
+      while j < 3 do {
+        while k < 3 do {
+          c[i][j] <- c[i][j] + a[i][k] * b[k][j];
+          k <- k + 1;
+        }
+        k <- 0;
+        j <- j + 1;
+      }
+      j <- 0;
+      i <- i + 1;
+    }
+  }
+
+  fun matrix_print(ref m: int[3][3]): nothing
+    var i, j: int;
+  {
+    while i < 3 do {
+      while j < 3 do {
+        writeInteger(m[i][j]);
+        writeChar('\t');
+        j <- j + 1;
+      }
+      writeChar('\n');
+      j <- 0;
+      i <- i + 1;
+    }
+  }
+
+  var a, b, c: int[3][3];
+
+{
+  a[0][0] <- 1; a[0][1] <- 2; a[0][2] <- 3;
+  a[1][0] <- 4; a[1][1] <- 5; a[1][2] <- 6;
+  a[2][0] <- 7; a[2][1] <- 8; a[2][2] <- 9;
+
+  b[0][0] <- 1 + 9; b[0][1] <- 2 + 9; b[0][2] <- 3 + 9;
+  b[1][0] <- 4 + 9; b[1][1] <- 5 + 9; b[1][2] <- 6 + 9;
+  b[2][0] <- 7 + 9; b[2][1] <- 8 + 9; b[2][2] <- 9 + 9;
+
+  matrix_mult(a, b, c);
+  matrix_print(c);
+}
+
+$ Output:
+$ 84      90      96
+$ 201     216     231
+$ 318     342     366
