@@ -291,13 +291,30 @@ private:
 
 class Expr: public AST {
 public:
-  void check_type(Type t, int dim) {
+  void check_type(Type t, int dim, std::vector<int> s=std::vector<int>()) {
     analyze();
     if (type != t || dimensions != dim) {
       std::cerr << getId() << " -> got: type " << type << " dimensions " << dimensions << std::endl;
       std::cerr << getId() << " -> expected: type " << t << " dimensions " << dim << std::endl;
       yyerror("Type mismatch"); 
     }
+
+    if (dim >= 2 && !s.empty()) {
+      auto sizes = getSizes();
+      for(unsigned i = 1; i < dim; ++i) {
+        if(sizes[i] != s[i]) {
+          char error_msg[128];
+          char *cstr_id = new char[getId().length() + 1];
+          strcpy(cstr_id, getId().c_str());
+          sprintf(error_msg, "%s -> argument of type '%s (*)[%d]' is incompatible with parameter of type '%s (*)[%d]'", cstr_id, parse_arr_type(type), sizes[i], parse_arr_type(t), s[i]);
+          delete[] cstr_id;
+          yyerror(error_msg);
+        }
+      }
+    }
+  }
+  const char* parse_arr_type(Type type) const  {
+    return type == 2 ? "int" : "char";
   }
   void check_type_cond() {
     analyze();
@@ -309,6 +326,7 @@ public:
   virtual void add_expr(Expr *e) {}
   virtual bool is_lval() { return false; }
   virtual std::string getId() const { return ""; }
+  virtual std::vector<int> getSizes() const { return std::vector<int>(); }
 
 protected:
   Type type;
@@ -855,8 +873,6 @@ public:
 
     for(auto &x: dims) x->check_type(INT_t, 0);
 
-    if(array && e->dim_sizes != nullptr) dim_sizes = *(e->dim_sizes);
-
     if(array) {
       if(e->type == ARRAY_t && dims.size() == e->dimenesions) {
         type = INT_t;
@@ -872,6 +888,8 @@ public:
       type = e->type;
       dimensions = e->dimenesions - dims.size();
     }
+
+    if(((type == ARRAY_t || type == STRING_t) || array) && e->dim_sizes != nullptr) dim_sizes = *(e->dim_sizes);
   }
   void set_array() {
     array = true;
@@ -915,6 +933,8 @@ public:
   std::string getId() const override {
     return id;
   }
+
+  std::vector<int> getSizes() const override { return dim_sizes; }
 
 private:
   std::string id;
@@ -1144,7 +1164,11 @@ public:
       auto it_p = params->begin();
       auto it_stp = st_params.begin();
       for(int par_count = 1; it_p!=params->end() && it_stp!=st_params.end(); ++it_p, ++it_stp, ++par_count) {
-        (*it_p)->check_type(it_stp->type, it_stp->dimenesions);
+        if(it_stp->dim_sizes)
+          (*it_p)->check_type(it_stp->type, it_stp->dimenesions, *it_stp->dim_sizes);
+        else 
+          (*it_p)->check_type(it_stp->type, it_stp->dimenesions);
+        
         if(it_stp->ref && !(*it_p)->is_lval()) {
           char error_msg[128];
           char *cstr = new char[id.length() + 1];
