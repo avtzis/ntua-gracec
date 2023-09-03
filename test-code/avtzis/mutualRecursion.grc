@@ -1,3 +1,12 @@
+$$
+$
+$ This grace program utilizes mutually recursive functions to determine if an input integer is even or odd and demonstrates how these functions can call each other to achieve this goal.
+$
+$ In essence, both even() and odd() rely on each other in a mutually recursive manner to determine if a given integer is even or odd.
+$ They work together by reducing the input value until it reaches 0, at which point they return the appropriate result (1 for even or 0 for odd), and the result is propagated back up the call chain to the main() function for further processing.
+$
+$$
+
 fun main(): nothing
 
   fun even(n: int): int;

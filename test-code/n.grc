@@ -4,6 +4,7 @@ fun main(): nothing
   var str: char[16];
 
 {
-  str <- "qwer\tty\n";
+  str <- "\"He\x6c\x6co \\ Wor\x6cd!\"\n";
   $ p[0] <- str;
+  writeString(str);
 }

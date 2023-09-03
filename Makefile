@@ -2,8 +2,8 @@
 
 LLVMCONFIG=llvm-config
 
-CXX=g++
-CXXFLAGS=-g `$(LLVMCONFIG) --cxxflags` -std=c++23 -fexceptions
+CXX=clang++
+CXXFLAGS=-g `$(LLVMCONFIG) --cxxflags` -std=c++20 -fexceptions
 LDFLAGS=`$(LLVMCONFIG) --ldflags --system-libs --libs all`
 
 default: gracec
@@ -26,7 +26,7 @@ gracec: lexer.o parser.o ast.o
 	$(CXX) $(CXXFLAGS) -o gracec $^ $(LDFLAGS)
 
 clean:
-	$(RM) lexer.cpp parser.cpp parser.hpp parser.output *.o *.s *.ll
+	$(RM) lexer.cpp parser.cpp parser.hpp parser.output *.o *.s *.ll *.imm *.asm
 
 distclean: clean
 	$(RM) gracec *.out*

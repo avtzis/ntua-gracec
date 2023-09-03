@@ -356,7 +356,7 @@ public:
         char error_msg[128];
         char *cstr = new char[id.length() + 1];
         strcpy(cstr, id.c_str());
-        sprintf(error_msg, "In function definition '%s()', expected %d paramater(s) but got %d", cstr, st_params_length, params_length);
+        sprintf(error_msg, "In function definition '%s()', expected %lu paramater(s) but got %lu", cstr, st_params_length, params_length);
         delete[] cstr;
         yyerror(error_msg);
       }
@@ -810,7 +810,7 @@ public:
     delete expr;
   }
   void analyze() override {
-    STEntry *e = st.lookup(FUNC_t);  //! mandatory returns?
+    STEntry *e = st.lookup(FUNC_t);  //! lookup latest function in scope
     if(expr != nullptr) {
       // std::cerr << "Function to return: " << e->id << std::endl;
       expr->check_type(e->ret, 0);
@@ -866,7 +866,7 @@ public:
       char error_msg[128];
       char *cstr = new char[id.length() + 1];
       strcpy(cstr, id.c_str());
-      sprintf(error_msg, "Variable '%s' is declared as array of %d dimension(s), but tried to access %d dimensions", cstr, e->dimenesions, dims.size());
+      sprintf(error_msg, "Variable '%s' is declared as array of %d dimension(s), but tried to access %zu dimensions", cstr, e->dimenesions, dims.size());
       delete[] cstr;
       yyerror(error_msg);
     }
@@ -891,10 +891,10 @@ public:
 
     if(((type == ARRAY_t || type == STRING_t) || array) && e->dim_sizes != nullptr) dim_sizes = *(e->dim_sizes);
   }
-  void set_array() {
+  void set_array() override {
     array = true;
   }
-  void add_expr(Expr *e) {
+  void add_expr(Expr *e) override {
     dims.push_back(e);
   }
   bool is_lval() override { return true; }
@@ -1034,8 +1034,21 @@ public:
   bool is_lval() override { return true; }
   llvm::Value* codegen(bool AInst=false) const override {
     bool escape = false;
+    bool escape_hex = false;
+    std::string hex;
     std::vector<llvm::Constant *> str_arr;
+
     for(auto &c: val) {
+      if(escape_hex) {
+        if(hex.size() < 2) {
+          hex.push_back(c);
+          continue;
+        }
+        auto i_hex = std::stoi(hex, nullptr, 16);
+        str_arr.push_back(c8((char)i_hex));
+        escape_hex = false;
+        hex.clear();
+      } 
       if(escape) {
         escape = false;
         switch(c) {
@@ -1043,6 +1056,7 @@ public:
           case 'r': str_arr.push_back(c8('\r')); break;        
           case 't': str_arr.push_back(c8('\t')); break;        
           case '0': str_arr.push_back(c8('\0')); break;        
+          case 'x': escape_hex = true; break;        
           default: str_arr.push_back(c8(c)); break;
         }
       } else if(c == '\\') {
@@ -1133,7 +1147,7 @@ public:
     if(params) for(auto &e: *params) delete e;
     delete params;
   }
-  void analyze() {
+  void analyze() override {
     STEntry *func = st.lookup(id);
 
     if(func->type != FUNC_t) {
@@ -1154,7 +1168,7 @@ public:
       char *cstr = new char[id.length() + 1];
       strcpy(cstr, id.c_str());
 
-      sprintf(error_msg, "In function '%s()', expected %d paramater(s) but got %d", cstr, st_params_length, params_length);
+      sprintf(error_msg, "In function '%s()', expected %lu paramater(s) but got %lu", cstr, st_params_length, params_length);
 
       delete[] cstr;
       yyerror(error_msg);

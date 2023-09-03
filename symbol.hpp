@@ -29,9 +29,9 @@ public:
     return &(locals[id]);
   }
   STEntry *lookup(Type type) {
-    for(auto it=locals.rbegin(); it!=locals.rend(); ++it) {
+    for(auto it=locals_stack.rbegin(); it!=locals_stack.rend(); ++it) {
       auto entry = *it;
-      if(entry.second.type == type) return &(it->second);
+      if(entry.type == type) return &(*it);
     }
     return nullptr;
   }
@@ -44,7 +44,9 @@ public:
       delete[] cstr;
       yyerror(error_msg);
     }
-    locals[id] = STEntry(type, ret, dim, id, ref, dim_sizes, defined);
+    auto e = STEntry(type, ret, dim, id, ref, dim_sizes, defined);
+    locals[id] = e;
+    locals_stack.push_back(e);
     if(type == FUNC_t) ft[id] = std::vector<STEntry>();
   }
   void param_insert(std::string func_name, STEntry param_entry) {
@@ -56,6 +58,7 @@ public:
 
 private:
   std::map<std::string, STEntry> locals;
+  std::vector<STEntry> locals_stack;
   std::map<std::string, std::vector<STEntry>> ft;
 };
 

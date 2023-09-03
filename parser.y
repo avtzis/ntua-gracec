@@ -380,7 +380,18 @@ int main(int argc, char** argv) {
     ;
 
     options.parse_positional({"filename"});
-    auto result = options.parse(argc, argv);
+    cxxopts::ParseResult result;
+    try {
+      result = options.parse(argc, argv);
+    } catch (const std::exception& ex) {
+      std::cerr << ex.what() << ". Emit '-h' flag for usage." << std::endl;
+      exit(1);
+    }
+
+    if (!result.arguments().size()) {
+        std::cout << options.help() << std::endl;
+        exit(0);
+    }
 
     if (result.count("help")) {
         std::cout << options.help() << std::endl;

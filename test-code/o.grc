@@ -1,0 +1,45 @@
+fun main(): nothing
+
+  fun nest(): nothing
+
+    var a: int;
+
+    fun f(j: int): nothing
+      var i: int;
+      fun k(): int 
+      { 
+        if 1 = 1 then
+          return 2;
+        else
+          return 4;
+      }
+    {
+      k();
+    }
+
+    fun ag(): int 
+    {
+      if 1 = 1 then
+        return 2;
+      else
+        return 4;
+    }
+
+    var b: int;
+    
+    fun h(): int 
+    {
+      if 1 = 1 then
+        return 2;
+      else
+        return 4;
+    }
+
+    var i: int;
+    var c: char[16];
+  
+  {}
+
+{
+  nest();
+}
