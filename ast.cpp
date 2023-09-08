@@ -9,6 +9,7 @@ std::map<std::string, llvm::Value*> AST::NamedValues;
 std::map<llvm::Value *, llvm::Type *> AST::PointerTypes;
 std::map<std::string, std::pair<llvm::Function*, std::vector<char>>> AST::NamedFunctions;
 std::map<std::string, std::pair<llvm::Value *, std::pair<llvm::Type *, llvm::Type *>>> AST::FunctionArguments;
+std::vector<std::string> AST::FunctionArgumentStack;
 std::vector<llvm::Function *> AST::FunctionStack;
 std::vector<llvm::Function *> AST::LocalFunctions;
 

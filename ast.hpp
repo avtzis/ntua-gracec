@@ -182,6 +182,7 @@ protected:
   static std::map<llvm::Value *, llvm::Type *> PointerTypes;
   static std::map<std::string, std::pair<llvm::Function *, std::vector<char>>> NamedFunctions;
   static std::map<std::string, std::pair<llvm::Value *, std::pair<llvm::Type *, llvm::Type *>>> FunctionArguments;
+  static std::vector<std::string> FunctionArgumentStack;
   static std::vector<llvm::Function *> FunctionStack;
   static std::vector<llvm::Function *> LocalFunctions;
 
@@ -406,9 +407,14 @@ public:
     for(auto &x: *param_list) {
       auto it = FunctionArguments.find(x->getId());
       if(it != FunctionArguments.end()) {  // found
+        auto it_fas = std::find(FunctionArgumentStack.begin(), FunctionArgumentStack.end(), it->first);
+        
         auto nodeHandler = FunctionArguments.extract(it->first);
-        nodeHandler.key() = it->first + "." + std::to_string(++naming_idx);
+        auto newName = it->first + "." + std::to_string(++naming_idx);
+        nodeHandler.key() = newName;
         FunctionArguments.insert(std::move(nodeHandler));
+
+        *it_fas = newName;
       }
       //! argument should stay if previous function called in current context
     }
@@ -417,8 +423,11 @@ public:
 
     //TODO: push arguments from FunctionArguments before function's arguments
     //! these arguments MUST be ptr (by ref), in order to be mutable
-    for(auto &x: FunctionArguments) {
+    /* for(auto &x: FunctionArguments) {
       ArgsTypes.push_back(x.second.second.second);
+    } */
+    for(auto &x: FunctionArgumentStack) {
+      ArgsTypes.push_back(FunctionArguments[x].second.second);
     }
 
     for(Decl *d: *param_list) {
@@ -430,11 +439,11 @@ public:
     llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, id, TheModule.get());
 
     unsigned i = 0;
-    signed n = FunctionArguments.size();
-    auto it = FunctionArguments.begin();
+    signed n = FunctionArgumentStack.size();
+    auto it = FunctionArgumentStack.begin();
     for (auto &Arg : F->args()) {
       if(n-- > 0) {
-        Arg.setName((it++)->first);
+        Arg.setName(*(it++));
         //! inherited argument should not have its native name if new arguments have the same name
       } else {
         Arg.setName((*param_list)[i++]->getId());
@@ -517,10 +526,12 @@ public:
   llvm::Function* codegen(bool AInst=false) const override {          //// extern??
     //TODO: save FunctionArguments state
     auto oldArguments(FunctionArguments);
+    auto oldArgumentStack(FunctionArgumentStack);
 
     if(!local_def_list) {
       auto ret = header->codegen(true);
       FunctionArguments = oldArguments;
+      FunctionArgumentStack = oldArgumentStack;
       return ret;
     }
 
@@ -578,6 +589,7 @@ public:
         ArgSave = Alloca;
       }
       FunctionArguments[std::string(Arg.getName())] = {ArgSave, {types[i], typesRef[i]}};
+      FunctionArgumentStack.push_back(std::string(Arg.getName()));
       ++i;
     }
 
@@ -606,6 +618,7 @@ public:
     NamedFunctions = OldFunctions;
     //TODO: restore FunctionArguments state
     FunctionArguments = oldArguments;
+    FunctionArgumentStack = oldArgumentStack;
     FunctionStack.pop_back();
 
     return TheFunction;
@@ -1250,9 +1263,14 @@ public:
       signed n = requiredArgs - params->size();
       // std::cerr << "N. Args: " << "req=" << requiredArgs << " input=" << params->size() << std::endl;
       // std::cerr << "\n\n\n";
-      for(auto &x: FunctionArguments) {
+      /* for(auto &x: FunctionArguments) {
         if(n-- > 0) {
           ArgsV.push_back(x.second.first);
+        }
+      } */
+      for(auto &x: FunctionArgumentStack) {
+        if(n-- > 0) {
+          ArgsV.push_back(FunctionArguments[x].first);
         }
       }
     }
@@ -1306,7 +1324,12 @@ public:
     llvm::Value* l = cond1->codegen();
     llvm::Value* r = cond2->codegen();
 
-    if(op == "and") return Builder.CreateAnd(l, r, "andtmp");
+    if(op == "and") {
+      return Builder.CreateAnd(l, r, "andtmp");
+    }
+
+
+
     if(op == "or") return Builder.CreateOr(l, r, "ortmp");
 
     return nullptr;
