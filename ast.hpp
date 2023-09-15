@@ -719,6 +719,9 @@ public:
     if(l_val->getType() == ARRAY_t || l_val->getType() == STRING_t && l_val->getDim() > 1) {
       yyerror("Cannot assign to array");
     }
+    if(l_val->getType() == FUNC_t) {
+      yyerror("Cannot assing to function");
+    }
 
     r_val->check_type(l_val->getType(), l_val->getDim());
   }
