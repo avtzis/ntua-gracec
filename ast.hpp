@@ -669,6 +669,10 @@ public:
       yyerror(error_msg);
     }
 
+    if(dim_sizes) for(auto &x: *dim_sizes) {
+      if(x == 0) yyerror("Arrays cannot have size 0");
+    }
+
     auto *entry = st.lookup_quick(id);
     if(entry && entry->type == FUNC_t) {
       char error_msg[128];
