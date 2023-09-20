@@ -1,6 +1,8 @@
 #ifndef __AST_HPP__
 #define __AST_HPP__
 
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -30,6 +32,8 @@
 extern std::vector<std::string> names;
 extern std::vector<int> *concat(std::vector<int> *v1, std::vector<int> *v2);
 extern std::vector<int> *concat_rev(std::vector<int> *v1, std::vector<int> *v2);
+
+extern std::vector<std::string> rt_funcs;
 
 struct Full_Type {
     Type type;
@@ -1172,6 +1176,15 @@ public:
       strcpy(cstr, id.c_str());
       sprintf(error_msg, "'%s' not declared as function", cstr);
       delete[] cstr;
+      yyerror(error_msg);
+    }
+
+    if(!func->defined && std::find(rt_funcs.begin(), rt_funcs.end(), id) == rt_funcs.end()) {
+      char error_msg[128];
+      char *cstr = new char[id.length() + 1];
+      strcpy(cstr, id.c_str());
+      sprintf(error_msg, "Function '%s()' used but no definition found", cstr);
+      delete [] cstr;
       yyerror(error_msg);
     }
 

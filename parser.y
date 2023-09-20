@@ -15,6 +15,7 @@
 SymbolTable st;
 
 std::vector<std::string> names;
+std::vector<std::string> rt_funcs = {"writeInteger", "writeString", "writeChar", "readInteger", "readChar", "readString", "ascii", "chr", "strlen", "strcmp", "strcpy", "strcat"};
 std::vector<Function *> runtime_funcs;
 
 void fill_names() {
