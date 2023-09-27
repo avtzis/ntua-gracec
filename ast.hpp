@@ -1183,14 +1183,14 @@ public:
       yyerror(error_msg);
     }
 
-    if(!func->defined && std::find(rt_funcs.begin(), rt_funcs.end(), id) == rt_funcs.end()) {
+    /* if(!func->defined && std::find(rt_funcs.begin(), rt_funcs.end(), id) == rt_funcs.end()) {
       char error_msg[128];
       char *cstr = new char[id.length() + 1];
       strcpy(cstr, id.c_str());
       sprintf(error_msg, "Function '%s()' used but no definition found", cstr);
       delete [] cstr;
       yyerror(error_msg);
-    }
+    } */
 
     auto st_params = st.get_params(id);
     auto st_params_length = st_params.size();
