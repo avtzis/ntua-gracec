@@ -1,9 +1,0 @@
-build: make
-usage: ./gracec -h
-clean: make clean
-link example: clang -o a.out code.asm libgrc.a -no-pie
-
-versions:
-  flex 2.6.4
-  bison (GNU Bison) 3.8.2
-  llvm/clang 15.0.7
