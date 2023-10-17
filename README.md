@@ -2,7 +2,8 @@
 NTUA Compilers Project 2023
 
 ## Team
-Team 18
+Team: 18
+
 Members:
   - Altan Avtzi [el19241]
 
@@ -15,9 +16,9 @@ Members:
 ## Key Learnings
 
 ## Dependencies
-[flex-latest](https://archlinux.org/packages/core/x86_64/flex/)
-[bison-latest](https://archlinux.org/packages/core/x86_64/bison/)
-[llvm15-15.0.7-1](https://archlinux.org/packages/extra/x86_64/llvm15/)
+- [flex-latest](https://archlinux.org/packages/core/x86_64/flex/)
+- [bison-latest](https://archlinux.org/packages/core/x86_64/bison/)
+- [llvm15-15.0.7-1](https://archlinux.org/packages/extra/x86_64/llvm15/)
 
 ## Installation
 After cloning the repo use:
@@ -27,12 +28,18 @@ make
 Also available: `make clean` `make distclean`
 
 ## Usage
-For basic usage see:
+To get intermediate reprasentation in LLVM and assembly code:
 ```sh
-./grace -h
+./gracec path/to/mycode.grc
+```
+This generates `path/to/mycode.imm` and `path/to/mycode.asm`.
+
+For more details see:
+```sh
+./gracec -h
 ```
 
-To compile intermediate represantation into assembly use `llc`, e.g:
+To compile intermediate representation into assembly, use `llc`, e.g:
 ```sh
 llc -o temp.asm mycode.imm
 ```
@@ -46,6 +53,7 @@ To run directly from source code:
 ```sh
 ./run.sh mycode1.grc mycode2.grc ...
 ```
+This requires `clang`.
 
 ## Credits
 
