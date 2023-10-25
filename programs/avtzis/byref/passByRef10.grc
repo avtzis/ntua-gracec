@@ -1,0 +1,29 @@
+fun main(): nothing
+
+  var a: int;
+
+  fun f(b: int; ref c: int): int
+    var d: int;
+  { $ f
+    d <- 3;
+    while d < 10 do {
+      a <- a + d;
+      b <- b + (a * 2);
+      d <- d + 2;
+    }
+    c <- b * (d - 2);
+    return b;
+  } $ f
+
+  var b, c, d: int;
+
+{ $ main
+  a <- 5;
+  c <- 6;
+  d <- f(c, b);
+
+  writeString("a = "); writeInteger(a); writeChar('\n'); $ 29
+  writeString("b = "); writeInteger(b); writeChar('\n'); $ 1314
+  writeString("c = "); writeInteger(c); writeChar('\n'); $ 6
+  writeString("d = "); writeInteger(d); writeChar('\n'); $ 146
+} $ main

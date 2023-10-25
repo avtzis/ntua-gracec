@@ -1,0 +1,48 @@
+fun main(): nothing
+
+  fun f(a: int; ref b, c: int[]): int
+    var i: int;  
+  {
+    i <- 10;
+    while i > 0 do {
+      if (i mod 2 = 0) then 
+        b[i] <- a;
+      else
+        c[i] <- a; 
+
+      i <- i - 1;
+    }
+    return 0;
+  }
+
+  fun g(c: char; ref str: char[]; n: int): nothing
+    var i: int;
+  {
+    i <- 0;
+    while i < n do {
+      str[i] <- c;
+      i <- i + 1;
+    }
+  }
+
+  var i: int;
+  var arr1, arr2: int[16];
+  var c: char;
+  var str: char[16];
+
+{
+  i <- 42;
+  f(i, arr1, arr2);
+
+  c <- 'c';
+  g(c, str, 16);
+
+  if (arr1[0] >= arr2[0] or arr1[1] = arr2[1]) then {
+    if (not (arr1[2] <= arr2[2] and arr1[3] # arr2[3])) then 
+      i <- 1;
+    else i <- 2 * (-i);
+  } else i <- i div 10;
+
+  writeString("Result:\n");
+  writeInteger(i);
+}

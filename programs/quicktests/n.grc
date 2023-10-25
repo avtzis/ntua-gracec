@@ -1,0 +1,10 @@
+fun main(): nothing
+
+  $ var p: char[16][16][16];
+  var str: char[16];
+
+{
+  str <- "\"He\x6c\x6co \\ Wor\x6cd!\"\n";
+  $ p[0] <- str;
+  writeString(str);
+}

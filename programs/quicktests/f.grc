@@ -1,0 +1,14 @@
+fun main(): nothing
+
+  fun f(ref s: char[]): nothing
+  {
+    s[2] <- 'y';
+    writeString(s);
+  }
+
+  var str: char[16];
+
+{
+  strcpy(str, "helo\n");
+  f(str);
+}
