@@ -374,7 +374,7 @@ int main(int argc, char** argv) {
 
     options.add_options()
         ("o,optimize", "Optimize code")
-        ("f,final", "Generate final code to standard output from standard input")
+        ("f,final", "Generate final code to standard output from standard input [DEPRECATED] (BROKEN AFTER LLVM 15)")
         ("i,intermediate", "Generate intermediade representation to standard output from standard input")
         ("h,help", "Print usage info")
         ("filename", "The grace code to compile", cxxopts::value<std::string>())
@@ -400,10 +400,10 @@ int main(int argc, char** argv) {
     }
 
     optimize = result["optimize"].as<bool>();
-    
+
     if(result["final"].as<bool>()) {
-        yyparse();
-        AST::compile_to_asm();
+        /* yyparse();
+        AST::compile_to_asm(); */
         exit(0);
     }
 
@@ -458,6 +458,6 @@ int main(int argc, char** argv) {
             exit(1);
         }
     }
-    
+
     return 0;
 }

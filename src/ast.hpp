@@ -140,43 +140,6 @@ public:
 
   static std::unique_ptr<llvm::Module> TheModule;
 
-  static void compile_to_asm() {
-    auto CPU = "generic";
-    auto Features = "";
-
-    // auto TargetTriple("x86_64-pc-linux-gnu");
-    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
-
-    std::string Error;
-    auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
-    if(!Target) {
-      llvm::errs() << Error << "\n";
-      exit(1);
-    }
-
-    llvm::TargetOptions opt;
-    auto RM = llvm::Optional<llvm::Reloc::Model>();
-    auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
-
-    TheModule->setDataLayout(TargetMachine->createDataLayout());
-    TheModule->setTargetTriple(TargetTriple);
-
-    llvm::legacy::PassManager pass;
-    auto FileType = llvm::CGFT_AssemblyFile;
-
-    if(TargetMachine->addPassesToEmitFile(pass, llvm::outs(), nullptr, FileType)) {
-      llvm::errs() << "TargetMachine can't emit a file of this type\n";
-      exit(1);
-    }
-
-    pass.run(*TheModule);
-  }
-
 protected:
   static llvm::LLVMContext TheContext;
   static llvm::IRBuilder<> Builder;
@@ -301,11 +264,16 @@ public:
     if (type != t || dimensions != dim) {
       std::cerr << getId() << " -> got: type " << type << " dimensions " << dimensions << std::endl;
       std::cerr << getId() << " -> expected: type " << t << " dimensions " << dim << std::endl;
-      yyerror("Type mismatch"); 
+      yyerror("Type mismatch");
     }
 
     if (dim >= 2 && !s.empty()) {
       auto sizes = getSizes();
+
+      int diff = s.size() - sizes.size();
+      if(diff < 0)
+        sizes.erase(sizes.begin(), sizes.begin() - diff);
+
       for(unsigned i = 1; i < dim; ++i) {
         if(sizes[i] != s[i]) {
           char error_msg[128];
@@ -412,7 +380,7 @@ public:
       auto it = FunctionArguments.find(x->getId());
       if(it != FunctionArguments.end()) {  // found
         auto it_fas = std::find(FunctionArgumentStack.begin(), FunctionArgumentStack.end(), it->first);
-        
+
         auto nodeHandler = FunctionArguments.extract(it->first);
         auto newName = it->first + "." + std::to_string(++naming_idx);
         nodeHandler.key() = newName;
@@ -724,8 +692,8 @@ public:
   }
   void analyze() override {
     l_val->analyze();
-    if(l_val->getType() == ARRAY_t || l_val->getType() == STRING_t && l_val->getDim() > 1) {
-      yyerror("Cannot assign to array");
+    if(l_val->getType() == ARRAY_t || l_val->getType() == STRING_t) {
+      yyerror("Cannot assign to array or string");
     }
     if(l_val->getType() == FUNC_t) {
       yyerror("Cannot assing to function");
@@ -928,7 +896,7 @@ public:
     if (array) {
       auto index = calculateArrayIndex();
       // std::cerr << "its array\n";
-      
+
       llvm::Type *tmpType;
       if(llvm::isa<llvm::GlobalVariable>(A)) {
         tmpType = ((llvm::GlobalVariable *)A)->getValueType(); //? array type?
@@ -1072,15 +1040,15 @@ public:
         str_arr.push_back(c8((char)i_hex));
         escape_hex = false;
         hex.clear();
-      } 
+      }
       if(escape) {
         escape = false;
         switch(c) {
-          case 'n': str_arr.push_back(c8('\n')); break;        
-          case 'r': str_arr.push_back(c8('\r')); break;        
-          case 't': str_arr.push_back(c8('\t')); break;        
-          case '0': str_arr.push_back(c8('\0')); break;        
-          case 'x': escape_hex = true; break;        
+          case 'n': str_arr.push_back(c8('\n')); break;
+          case 'r': str_arr.push_back(c8('\r')); break;
+          case 't': str_arr.push_back(c8('\t')); break;
+          case '0': str_arr.push_back(c8('\0')); break;
+          case 'x': escape_hex = true; break;
           default: str_arr.push_back(c8(c)); break;
         }
       } else if(c == '\\') {
@@ -1213,9 +1181,9 @@ public:
       for(int par_count = 1; it_p!=params->end() && it_stp!=st_params.end(); ++it_p, ++it_stp, ++par_count) {
         if(it_stp->dim_sizes)
           (*it_p)->check_type(it_stp->type, it_stp->dimenesions, *it_stp->dim_sizes);
-        else 
+        else
           (*it_p)->check_type(it_stp->type, it_stp->dimenesions);
-        
+
         if(it_stp->ref && !(*it_p)->is_lval()) {
           char error_msg[128];
           char *cstr = new char[id.length() + 1];
@@ -1277,7 +1245,7 @@ public:
       // std::cerr << (std::string)x->getName() << std::endl;
     }
     // std::cerr << "\n";
-    
+
     if(found) {
       auto requiredArgs = CalleeF->arg_size();
       signed n = requiredArgs - params->size();
