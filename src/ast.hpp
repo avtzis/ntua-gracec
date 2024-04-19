@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <llvm/IR/Constant.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -728,7 +729,7 @@ public:
   }
   llvm::Value* codegen(bool AInst=false) const override {
     llvm::Value *c = cond->codegen();
-    //llvm::Value *cond = Builder.CreateICmpNE(v, c32(0), "if_cond");   //? maybe unnecessary.
+    // c = Builder.CreateICmpNE(c, llvm::ConstantInt::getFalse(TheContext), "if_cond");   //? maybe unnecessary.
     llvm::Function *TheFunction = Builder.GetInsertBlock()->getParent();
 
     llvm::BasicBlock *ThenBB = llvm::BasicBlock::Create(TheContext, "then", TheFunction);
@@ -1309,16 +1310,48 @@ public:
     cond2->analyze();
   }
   llvm::Value* codegen(bool AInst=false) const override {
-    llvm::Value* l = cond1->codegen();
-    llvm::Value* r = cond2->codegen();
+    llvm::Function *function = Builder.GetInsertBlock()->getParent();
+    llvm::BasicBlock *ScBB = llvm::BasicBlock::Create(TheContext, "shortcircuit", function);
+    llvm::BasicBlock *RightBB = llvm::BasicBlock::Create(TheContext, "right", function);
+    llvm::BasicBlock *AfterBB = llvm::BasicBlock::Create(TheContext, "after", function);
 
-    if(op == "and") {
-      return Builder.CreateAnd(l, r, "andtmp");
+    Builder.CreateBr(ScBB);
+    Builder.SetInsertPoint(ScBB);
+    llvm::Value* LeftV = cond1->codegen();
+
+    if (op == "and") {
+      // Short-circuit: if the left condition is false, skip evaluating the right condition
+      Builder.CreateCondBr(LeftV, RightBB, AfterBB);
+
+      // Right condition basic block
+      Builder.SetInsertPoint(RightBB);
+      llvm::Value* RightV = cond2->codegen();
+      Builder.CreateBr(AfterBB);
+
+      // After block
+      Builder.SetInsertPoint(AfterBB);
+      llvm::PHINode *phi = Builder.CreatePHI(llvm::Type::getInt1Ty(TheContext), 2, "andtmp");
+      phi->addIncoming(llvm::ConstantInt::getFalse(TheContext), ScBB);
+      phi->addIncoming(RightV, RightBB);
+      return phi;
     }
 
+    else if (op == "or") {
+      // Short-circuit: if the left condition is true, skip evaluating the right condition
+      Builder.CreateCondBr(LeftV, AfterBB, RightBB);
 
+      // Right condition basic block
+      Builder.SetInsertPoint(RightBB);
+      llvm::Value* RightV = cond2->codegen();
+      Builder.CreateBr(AfterBB);
 
-    if(op == "or") return Builder.CreateOr(l, r, "ortmp");
+      // After block
+      Builder.SetInsertPoint(AfterBB);
+      llvm::PHINode *phi = Builder.CreatePHI(llvm::Type::getInt1Ty(TheContext), 2, "ortmp");
+      phi->addIncoming(llvm::ConstantInt::getTrue(TheContext), ScBB);
+      phi->addIncoming(RightV, RightBB);
+      return phi;
+    }
 
     return nullptr;
   }
