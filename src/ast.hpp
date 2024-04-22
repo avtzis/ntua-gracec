@@ -1328,6 +1328,7 @@ public:
     Builder.CreateBr(ScBB);
     Builder.SetInsertPoint(ScBB);
     llvm::Value* LeftV = cond1->codegen();
+    auto LeftPred = Builder.GetInsertBlock();
 
     if (op == "and") {
       // Short-circuit: if the left condition is false, skip evaluating the right condition
@@ -1336,13 +1337,14 @@ public:
       // Right condition basic block
       Builder.SetInsertPoint(RightBB);
       llvm::Value* RightV = cond2->codegen();
+      auto RightPred = Builder.GetInsertBlock();
       Builder.CreateBr(AfterBB);
 
       // After block
       Builder.SetInsertPoint(AfterBB);
       llvm::PHINode *phi = Builder.CreatePHI(llvm::Type::getInt1Ty(TheContext), 2, "andtmp");
-      phi->addIncoming(llvm::ConstantInt::getFalse(TheContext), ScBB);
-      phi->addIncoming(RightV, RightBB);
+      phi->addIncoming(llvm::ConstantInt::getFalse(TheContext), LeftPred);
+      phi->addIncoming(RightV, RightPred);
       return phi;
     }
 
@@ -1353,13 +1355,14 @@ public:
       // Right condition basic block
       Builder.SetInsertPoint(RightBB);
       llvm::Value* RightV = cond2->codegen();
+      auto RightPred = Builder.GetInsertBlock();
       Builder.CreateBr(AfterBB);
 
       // After block
       Builder.SetInsertPoint(AfterBB);
       llvm::PHINode *phi = Builder.CreatePHI(llvm::Type::getInt1Ty(TheContext), 2, "ortmp");
-      phi->addIncoming(llvm::ConstantInt::getTrue(TheContext), ScBB);
-      phi->addIncoming(RightV, RightBB);
+      phi->addIncoming(llvm::ConstantInt::getTrue(TheContext), LeftPred);
+      phi->addIncoming(RightV, RightPred);
       return phi;
     }
 
