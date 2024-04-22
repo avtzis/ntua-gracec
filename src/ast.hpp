@@ -183,12 +183,30 @@ protected:
     return llvm::ConstantInt::get(TheContext, llvm::APInt(64, n, true));
   }
 
-  static llvm::Type* parse_type(Type t, int size=64, bool ref=false) {
+  static llvm::Type* parse_type(Type t, std::vector<int> dim_sizes=std::vector<int>(), bool ref=false) {
+    llvm::ArrayType * at;
+
+    if (!dim_sizes.empty()) {
+      for(auto it = dim_sizes.rbegin(); it != dim_sizes.rend(); ++it) {
+        if (*it == 0) *it = 64;
+
+        if(it == dim_sizes.rbegin()) {
+          if (t == 2)
+            at = llvm::ArrayType::get(i32, *it);
+          else
+            at = llvm::ArrayType::get(i8, *it);
+        }
+        else
+          at = llvm::ArrayType::get(at, *it);
+      }
+    }
+
+
     switch(t) {
       case 0: return ref ? llvm::PointerType::get(i32, 0) : i32;
       case 1: return ref ? llvm::PointerType::get(i8, 0) : i8;
-      case 2: if(ref) return llvm::PointerType::get(i32, 0); else return llvm::ArrayType::get(i32, size);  /////!array
-      case 3: if(ref) return llvm::PointerType::get(i8, 0); else return llvm::ArrayType::get(i8, size+1);  /////!array
+      case 2: if(ref) return llvm::PointerType::get(i32, 0); else return at;  /////!array
+      case 3: if(ref) return llvm::PointerType::get(i8, 0); else return at;  /////!array
       case 5: return llvm::Type::getVoidTy(TheContext);
       default: return nullptr;
     }
@@ -219,7 +237,7 @@ public:
   virtual Type getType() { return NO_t; }
   virtual bool getRef() { return false; }
   virtual int getDims() { return 0; }
-  virtual int linear_size() const { return 0; }
+  virtual std::vector<int> linear_size() const { return std::vector<int>(); }
 };
 
 class Stmt: public AST {
@@ -662,18 +680,14 @@ public:
   bool getRef() override { return ref; }
   int getDims() override { return dim; }
   llvm::Value* codegen(bool AInst=false) const override {
-    auto var_type = parse_type(type, linear_size());
+    auto var_type = parse_type(type, *dim_sizes);
     auto gVar = new llvm::GlobalVariable(*TheModule, var_type, false, llvm::GlobalValue::ExternalLinkage, llvm::ConstantAggregateZero::get(var_type), id);
     NamedValues[id] = gVar;
     return nullptr;
   }
-  int linear_size() const override {
-    int res = 1;
-    if (dim_sizes != nullptr) for(auto &x: *dim_sizes) {
-      if(x == 0) continue;
-      res *= x;
-    }
-    return res;
+  std::vector<int> linear_size() const override {
+    if(dim_sizes == nullptr) return std::vector<int>();
+    return *dim_sizes;
   }
 
 private:
@@ -937,18 +951,14 @@ private:
 
   std::vector<llvm::Value*> calculateArrayIndex() const {
     std::vector<llvm::Value*> indices;
+    indices.push_back(c32(0));
+
     for(auto &e: dims) {
       auto dimValue = e->codegen();
       indices.push_back(dimValue);
     }
 
-    auto linearIndex = calculateLinearIndex(indices);
-
-    std::vector<llvm::Value*> gepIndices;
-    gepIndices.push_back(c32(0));
-    gepIndices.push_back(linearIndex);
-
-    return gepIndices;
+    return indices;
   }
 
   llvm::Value* calculateLinearIndex(const std::vector<llvm::Value*>& indices) const {
