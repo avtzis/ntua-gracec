@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <llvm/IR/Constant.h>
+#include <llvm/IR/GlobalVariable.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -153,6 +154,7 @@ protected:
   static std::vector<std::string> FunctionArgumentStack;
   static std::vector<llvm::Function *> FunctionStack;
   static std::vector<llvm::Function *> LocalFunctions;
+  static std::vector<llvm::Value *> LocalDefs;
 
   static unsigned naming_idx;
 
@@ -585,7 +587,9 @@ public:
     }
 
     auto OldLocals(LocalFunctions);
+    auto OldDefs(LocalDefs);
     LocalFunctions.clear();
+    LocalDefs.clear();
     for(Decl *def: *local_def_list) {
       //TODO: add functions to LocalFunctions
       auto v = def->codegen();
@@ -604,6 +608,7 @@ public:
 
     llvm::verifyFunction(*TheFunction);
 
+    LocalDefs = OldDefs;
     LocalFunctions = OldLocals;
     NamedValues = OldBindings;
     NamedFunctions = OldFunctions;
@@ -683,6 +688,7 @@ public:
     auto var_type = parse_type(type, *dim_sizes);
     auto gVar = new llvm::GlobalVariable(*TheModule, var_type, false, llvm::GlobalValue::ExternalLinkage, llvm::ConstantAggregateZero::get(var_type), id);
     NamedValues[id] = gVar;
+    LocalDefs.push_back(gVar);
     return nullptr;
   }
   std::vector<int> linear_size() const override {
@@ -1210,6 +1216,7 @@ public:
     dimensions = 0;
   }
   llvm::Value* codegen(bool AInst=false) const override {     ///// save old bindings and restore
+    auto TheFunction = Builder.GetInsertBlock()->getParent();
     auto CalleeF = NamedFunctions[id].first;
     auto refs = NamedFunctions[id].second;
 
@@ -1278,10 +1285,32 @@ public:
       ArgsV.push_back(arg->codegen(refs[i++]));
     }
 
+    // In case of recursive function call, we want to save the local defs of the function
+    // and restore them after the call, in order to avoid any side effects of using global variables
+    std::vector<llvm::Value*> SavedLocalDefs;
+    if(CalleeF == TheFunction) {
+      for(auto &def: LocalDefs) {
+        auto Alloca = CreateEntryBlockAlloca(TheFunction, "tmpsavealloc", ((llvm::GlobalVariable *)def)->getValueType());
+        auto def_load = Builder.CreateLoad(((llvm::GlobalVariable *)def)->getValueType(), def, "tmpsave");
+        Builder.CreateStore(def_load, Alloca);
+        SavedLocalDefs.push_back(Alloca);
+      }
+    }
+
+    llvm::Value *ret;
     if(CalleeF->getReturnType()->isVoidTy())
-      return Builder.CreateCall(CalleeF, ArgsV);
+      ret = Builder.CreateCall(CalleeF, ArgsV);
     else
-      return Builder.CreateCall(CalleeF, ArgsV, "calltmp");
+      ret = Builder.CreateCall(CalleeF, ArgsV, "calltmp");
+
+    for(auto it=LocalDefs.begin(), it_saved=SavedLocalDefs.begin();
+        it_saved != SavedLocalDefs.end();
+        ++it, ++it_saved) {
+      auto aloca_load = Builder.CreateLoad(((llvm::AllocaInst *)(*it_saved))->getAllocatedType(), *it_saved, "tmpload");
+      Builder.CreateStore(aloca_load, *it);
+    }
+
+    return ret;
   }
 
 private:

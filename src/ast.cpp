@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include <llvm/IR/Value.h>
 
 llvm::LLVMContext AST::TheContext;
 llvm::IRBuilder<> AST::Builder(TheContext);
@@ -12,6 +13,7 @@ std::map<std::string, std::pair<llvm::Value *, std::pair<llvm::Type *, llvm::Typ
 std::vector<std::string> AST::FunctionArgumentStack;
 std::vector<llvm::Function *> AST::FunctionStack;
 std::vector<llvm::Function *> AST::LocalFunctions;
+std::vector<llvm::Value *> AST::LocalDefs;
 
 unsigned AST::naming_idx = 0;
 llvm::Function *AST::TheWriteInteger;
