@@ -18,7 +18,6 @@ The primary goal of this project is to successfully develop a fully functional c
 Throughout the project, key learnings include understanding the fundamental concepts of compiler design such as lexical analysis, syntax analysis, semantic analysis, optimization, and code generation. Students will gain hands-on experience in implementing these components in their chosen programming language. The project also emphasizes the importance of using compiler construction tools effectively and understanding the intricacies of the Grace programming language.
 
 ## Dependencies
-- c++20
 - flex
 - bison
 - LLVM (config, libs, llc, clang) - (last compiled with version [17.0.6](https://github.com/llvm/llvm-project/releases/tag/llvmorg-17.0.6))
